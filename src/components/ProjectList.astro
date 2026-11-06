@@ -1,0 +1,17 @@
+---
+import type { CollectionEntry } from 'astro:content'
+interface Props { projects: CollectionEntry<'projects'>[] }
+const { projects } = Astro.props
+---
+
+<ul class="ruled">
+  {projects.map((p) => (
+    <li>
+      <span class="kicker">{p.data.year}</span>
+      <div>
+        <a href={p.data.url}>{p.data.title}</a>
+        <span class="sub">{p.data.description}</span>
+      </div>
+    </li>
+  ))}
+</ul>

@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro'
+import ProjectList from '../components/ProjectList.astro'
+import { sortedProjects } from '../lib/markdown'
+
+const projects = await sortedProjects()
+---
+
+<Base title="Projects" description="Selected projects." markdownPath="/projects.md">
+  <h1>Projects</h1>
+  <ProjectList projects={projects} />
+</Base>

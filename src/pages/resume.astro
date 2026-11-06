@@ -1,0 +1,13 @@
+---
+import { getEntry, render } from 'astro:content'
+import Base from '../layouts/Base.astro'
+
+const resume = await getEntry('pages', 'resume')
+if (!resume) throw new Error('Missing src/content/pages/resume.md')
+const { Content } = await render(resume)
+---
+
+<Base title={resume.data.title} description={resume.data.description} markdownPath="/resume.md">
+  <h1>{resume.data.title}</h1>
+  <article class="prose"><Content /></article>
+</Base>

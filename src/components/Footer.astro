@@ -1,0 +1,24 @@
+---
+import { LINKS, SITE } from '../site'
+interface Props { markdownPath?: string }
+const { markdownPath } = Astro.props
+---
+
+<footer>
+  <p class="label">Elsewhere:</p>
+  <p class="links">
+    {LINKS.map((l) => <a href={l.href}>{l.label}</a>)}
+  </p>
+  <p class="muted small">
+    © {new Date().getFullYear()} {SITE.name} ·{' '}
+    {markdownPath && <><a href={markdownPath}>This page as Markdown</a> ·{' '}</>}
+    <a href="/llms.txt">llms.txt</a>
+  </p>
+</footer>
+
+<style>
+  footer { margin-top: 4rem; padding-block: 1.5rem 2rem; border-top: 1px solid rgb(var(--color-border)); }
+  .links { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+  .small { font-size: 0.75rem; }
+  .small a { color: inherit; }
+</style>

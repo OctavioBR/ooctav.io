@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ooctav-io",
+  "compatibility_date": "2026-11-01",
+  // Assets-only Worker: no script, so requests are free and unmetered (ADR-0001).
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "ooctav.io", "custom_domain": true }
+  ]
+}
