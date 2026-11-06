@@ -59,6 +59,15 @@ We publish the Markdown source as static files at build time. We do not convert 
 - A push to `live` builds the site and deploys it to production. Pushes to other branches, including `main`, deploy only as preview versions with their own URLs and never change production.
 - We don't use GitHub Actions. Workers Builds needs no Cloudflare API token stored in GitHub secrets, and the build logs live next to the deployment.
 
+### Type-checking: TypeScript 7.1 beta with `@astrojs/ts-content-mapper`
+
+- `npm run check` runs `astro sync && tsc --noEmit --runExternalCode`. The `@astrojs/ts-content-mapper` package, registered under `contentMappers` in `tsconfig.json`, lets `tsc` type-check `.astro` files directly.
+- We don't use `astro check`. It refuses to run with TypeScript 7, and Astro plans to deprecate it.
+- The mapper needs TypeScript 7.1 or later, which is still in beta (`7.1.0-beta`). Both the compiler and the mapper are pre-release. Move to TypeScript 7.1 stable once it ships.
+- The `--runExternalCode` flag is required because the mapper runs code from `node_modules` during compilation.
+- Type-checking doesn't affect the site itself, because `astro build` doesn't use `tsc`. If the beta causes problems, revert to TypeScript 6 and `@astrojs/check`.
+- VS Code's built-in TypeScript can't load TypeScript 7. Use the TypeScript (Native Preview) extension in the editor.
+
 ## Consequences
 
 - **Good:**
