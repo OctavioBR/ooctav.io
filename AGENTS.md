@@ -10,16 +10,20 @@ Single-context: one `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agen
 
 ## Cloudflare
 
-Use the `cf` CLI for Cloudflare operations (deploy, dev, resources). It should already be installed. If `cf` is not found, install it and sign in:
+Use the `cf` CLI for Cloudflare resource operations. It should already be installed. If `cf` is not found, install it and sign in:
 
 ```sh
 npm install -g cf
 cf auth login
 ```
 
+## Deploy
+
+Deploy only when the user asks, and follow the Deployment section of `docs/adr/0001-astro-static-site-on-cloudflare-workers.md` when you do.
+
 ## Local dev, preview and performance checks
 
-Do NOT run `npm run preview`, `wrangler` or `cf dev`. Use the Astro dev server to look at changes, and `astro preview` (static, no Workers runtime) to measure them.
+Don't serve the site through the Workers runtime (`npm run preview`, `wrangler dev`, `cf dev`). Use the Astro dev server to look at changes, and `astro preview` (static, no Workers runtime) to measure them.
 
 Reuse the user's dev server when one is already running. It hot-reloads, so it reflects your edits. Only start your own if none is running:
 

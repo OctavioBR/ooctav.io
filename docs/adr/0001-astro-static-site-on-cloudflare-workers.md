@@ -12,7 +12,7 @@ Requirements:
 1. Simple and stable to maintain. No server to run, and as little client-side JavaScript as possible.
 2. Content written in Markdown, so it can be edited as plain text and served as-is.
 3. AI agents can read every page as Markdown, without having to parse HTML.
-4. A push to the `live` branch deploys to production automatically.
+4. Deploying to production is a single command.
 
 The stack follows the approach in Flavio Copes' [Why I use Astro](https://flaviocopes.com/why-i-use-astro/) and [Serving Markdown to AI agents](https://flaviocopes.com/serving-markdown-to-ai-agents/).
 
@@ -61,14 +61,11 @@ We publish the Markdown source as static files at build time. We do not convert 
 - **`robots.txt`:** explicitly allows AI crawlers such as GPTBot, ClaudeBot, and PerplexityBot, in addition to `User-agent: *`.
 - **Cloudflare AI Crawl Control:** set the zone so it doesn't block the Search, Training, or Agent crawler categories. A block at the edge takes effect before `robots.txt` is ever read.
 
-### Deployment: Workers Builds on the `live` branch
+### Deployment: `npm run deploy`
 
-- Cloudflare **Workers Builds**, Cloudflare's Git integration, is connected to the GitHub repo `OctavioBR/ooctav.io`.
-  - Production branch: `live`
-  - Build command: `npm run build`
-  - Deploy command: `npx wrangler deploy`
-- A push to `live` builds the site and deploys it to production. Pushes to other branches, including `main`, deploy only as preview versions with their own URLs and never change production.
-- We don't use GitHub Actions. Workers Builds needs no Cloudflare API token stored in GitHub secrets, and the build logs live next to the deployment.
+- Deploy with `npm run deploy` (`npm run build && wrangler deploy`). It needs a machine signed in to Cloudflare (`wrangler login`).
+- `wrangler deploy` uploads the local `dist/` to the `ooctav-io` Worker. It doesn't read git, so it deploys from any branch and includes uncommitted changes. Deploy from a clean, up-to-date `main`, so production matches git.
+- There's no CI deploy: no GitHub Actions and no Workers Builds.
 
 ### Type-checking: TypeScript 7.1 beta with `@astrojs/ts-content-mapper`
 
@@ -87,7 +84,7 @@ We publish the Markdown source as static files at build time. We do not convert 
   - Pages and their Markdown twins come from the same source, so they can't drift apart.
 - **Bad:**
   - The nameserver move makes Cloudflare responsible for all DNS for the domain.
-  - The only way to deploy to production is to merge or push to `live`, which is the intended behavior.
+  - Nothing stops a deploy from a dirty tree or a feature branch, so production can drift from `main`.
 - **Cost of adding new content types:** a blog, for example, means a new collection, a new `.md` endpoint for it, and an entry in `llms.txt` and `llms-full.txt`. No infrastructure changes.
 - **Not chosen:**
   - **Serving Markdown from the same URL based on the `Accept: text/markdown` header.** This would need a Worker script on every request. Reconsider if agents begin to rely on it, or if the zone moves to a plan that includes Markdown for Agents.

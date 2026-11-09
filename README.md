@@ -24,4 +24,4 @@ HTML pages and their Markdown twins (`/index.md`, `/resume.md`, `/projects.md`, 
 
 ## Deploy
 
-Push to `live`. Cloudflare Workers Builds builds the site and deploys it to production.
+See [ADR-0001](docs/adr/0001-astro-static-site-on-cloudflare-workers.md#deployment-npm-run-deploy).
