@@ -10,7 +10,8 @@
     "build": "astro build && node scripts/resume-pdf.mjs",
     "preview": "npm run build && wrangler dev",
     "check": "astro sync && tsc --noEmit --runExternalCode",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "clean": "node -e \"for (const d of ['dist', '.astro', '.wrangler', 'node_modules']) require('fs').rmSync(d, { recursive: true, force: true })\""
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.3.0",
