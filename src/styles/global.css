@@ -111,3 +111,18 @@ hr { border: 0; border-top: 1px solid rgb(var(--color-border)); margin: 2rem 0; 
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
+
+@media print {
+  :root {
+    --color-text-body: 0 0 0;
+    --color-text-muted: 70 70 70;
+    --color-text-link: 0 0 238;
+    --color-bg-body: 255 255 255;
+    --color-border: 200 200 200;
+    color-scheme: light;
+    font-size: 10pt;
+  }
+  body { max-width: none; min-height: 0; padding: 0; display: block; }
+  body > header, body > footer, .skip { display: none !important; }
+  a { color: inherit; text-decoration: none; }
+}

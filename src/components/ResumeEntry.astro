@@ -1,0 +1,124 @@
+---
+// One timeline entry: the logo sits on the line, the organization's facts on
+// one side and what happened there on the other. A company with several roles
+// lists them LinkedIn-style, each with its own dates. Location and employment
+// type appear once per company.
+import type { ImageMetadata } from 'astro'
+import { Image } from 'astro:assets'
+import { duration, range } from '../lib/resume'
+
+interface Role {
+  title: string
+  start?: string
+  end?: string
+  highlights?: string[]
+}
+interface Props {
+  org: string
+  url?: string
+  logo?: ImageMetadata
+  /** Date line under the organization, such as "Dec 2024 – Sep 2026 · 1 yr 10 mos". */
+  when: string
+  /** Facts line, such as "Contract · Remote". */
+  facts?: string
+  location?: string
+  roles: Role[]
+}
+const { org, url, logo, when, facts, location, roles } = Astro.props
+const multi = roles.length > 1
+---
+
+<li class="entry">
+  <div class="node" aria-hidden="true">
+    {logo
+      ? <Image src={logo} alt="" width={40} height={40} densities={logo.width >= 80 ? [1, 2] : [1]} />
+      : <span class="initial">{org[0]}</span>}
+  </div>
+  <div class="meta">
+    <h3 class="org">{url ? <a href={url}>{org}</a> : org}</h3>
+    <p class="when">{when}</p>
+    {facts && <p class="facts">{facts}</p>}
+    {location && <p class="facts">{location}</p>}
+  </div>
+  <ol class="roles">
+    {roles.map((r) => (
+      <li class="role">
+        <h4>{r.title}</h4>
+        {multi && r.start && <p class="when">{range(r.start, r.end)} · {duration(r.start, r.end)}</p>}
+        {r.highlights && r.highlights.length > 0 && <ul>{r.highlights.map((h) => <li>{h}</li>)}</ul>}
+      </li>
+    ))}
+  </ol>
+</li>
+
+<style>
+  .entry {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    grid-template-areas: 'node meta' 'node roles';
+    column-gap: 1rem;
+  }
+  .node { grid-area: node; position: relative; display: flex; justify-content: center; }
+  /* The timeline: one segment per entry, joined across entries. */
+  .node::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 1px solid rgb(var(--color-border));
+  }
+  .entry:last-child .node::before { bottom: auto; height: 2.5rem; }
+  .node img, .initial {
+    position: relative;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: rgb(var(--color-bg-body));
+    /* Ring sits right on the image edge; padding is baked into the logo files. */
+    box-shadow: 0 0 0 1px rgb(var(--color-border));
+    object-fit: cover;
+  }
+  .initial { display: grid; place-items: center; font-weight: 700; color: rgb(var(--color-text-link)); }
+
+  .meta { grid-area: meta; padding-bottom: 0.75rem; }
+  .org { margin: 0; font-size: 1rem; }
+  .org a { color: inherit; text-decoration: none; }
+  .org a:hover { text-decoration: underline; }
+  .when, .facts { margin: 0; font-size: 0.75rem; line-height: 1.5; color: rgb(var(--color-text-muted)); }
+  .when { color: rgb(var(--color-text-body)); }
+
+  .roles { grid-area: roles; list-style: none; margin: 0; padding: 0 0 3rem; }
+  .role + .role { margin-top: 1.25rem; }
+  h4 { margin: 0; font-size: 0.875rem; line-height: 1.4; }
+  /* Nested three lists deep, browsers default to squares; keep plain discs. */
+  ul { margin: 0.5rem 0 0; padding-left: 1.1rem; list-style-type: disc; }
+  ul li { margin-bottom: 0.3rem; }
+
+  /* Wide screens: the reference layout, facts right-aligned left of the line. */
+  @media (min-width: 760px) {
+    .entry {
+      grid-template-columns: minmax(0, 1fr) 2.5rem minmax(0, 1.45fr);
+      grid-template-areas: 'meta node roles';
+      column-gap: 1.75rem;
+    }
+    .meta { text-align: right; padding-top: 0.15rem; }
+  }
+
+  @media print {
+    .entry {
+      grid-template-columns: 1.6rem minmax(0, 1fr);
+      grid-template-areas: 'node meta' 'node roles';
+      column-gap: 0.6rem;
+    }
+    .meta { break-after: avoid-page; }
+    .role { break-inside: avoid-page; }
+    .node::before { display: none; }
+    .node img, .initial { width: 1.4rem; height: 1.4rem; box-shadow: none; }
+    .meta { text-align: left; padding: 0; display: flex; flex-wrap: wrap; column-gap: 0.75rem; align-items: baseline; }
+    .roles { padding-bottom: 0.9rem; }
+    .role + .role { margin-top: 0.5rem; }
+    ul { margin-top: 0.2rem; }
+    ul li { margin-bottom: 0.1rem; }
+  }
+</style>

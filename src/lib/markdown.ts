@@ -3,6 +3,7 @@
 // come from the same content collections and can't drift apart.
 import { getCollection, getEntry } from 'astro:content'
 import { LINKS, SITE } from '../site'
+import { duration, getResume, jobFacts, jobSpan, range } from './resume'
 
 export const MARKDOWN_HEADERS = { 'Content-Type': 'text/markdown; charset=utf-8' }
 
@@ -28,7 +29,7 @@ export async function sortedProjects() {
   return projects.sort((a, b) => a.data.order - b.data.order || b.data.year - a.data.year)
 }
 
-async function page(id: 'home' | 'resume') {
+async function page(id: 'home') {
   const entry = await getEntry('pages', id)
   if (!entry) throw new Error(`Missing src/content/pages/${id}.md`)
   return entry
@@ -54,8 +55,33 @@ export async function homeMarkdown() {
 }
 
 export async function resumeMarkdown() {
-  const resume = await page('resume')
-  return doc(`${resume.data.title} — ${SITE.name}`, resume.data.description, '/resume/', resume.body ?? '')
+  const { data, body } = await getResume()
+  const jobs = data.experience.map((job) => {
+    const span = jobSpan(job)
+    const roles = job.roles.map((r) =>
+      [`#### ${r.title}`, `${range(r.start, r.end)} (${duration(r.start, r.end)})`, r.highlights.map((h) => `- ${h}`).join('\n')]
+        .filter(Boolean)
+        .join('\n\n'),
+    )
+    return [`### ${job.company}`, `${jobFacts(job)} · ${range(span.start, span.end)}`, ...roles].join('\n\n')
+  })
+  const md = [
+    `**${SITE.name}** · ${data.headline}`,
+    '## About',
+    (body ?? '').trim(),
+    '## Experience',
+    ...jobs,
+    '## Education',
+    data.education.map((e) => `- **${e.degree}**, ${e.school}, ${e.location}, ${e.end}`).join('\n'),
+    '## Skills',
+    data.skills.map((s) => `- **${s.group}:** ${s.items.join(', ')}`).join('\n'),
+    '## Additional',
+    data.additional.map((a) => `- ${a}`).join('\n'),
+    '## Contact',
+    linksMd(),
+    `- [PDF](/resume.pdf)`,
+  ].join('\n\n')
+  return doc(`${data.title} — ${SITE.name}`, data.description, '/resume/', md)
 }
 
 export async function projectsMarkdown() {

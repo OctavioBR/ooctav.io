@@ -66,6 +66,7 @@ We publish the Markdown source as static files at build time. We do not convert 
 - Deploy with `npm run deploy` (`npm run build && wrangler deploy`). It needs a machine signed in to Cloudflare (`wrangler login`).
 - `wrangler deploy` uploads the local `dist/` to the `ooctav-io` Worker. It doesn't read git, so it deploys from any branch and includes uncommitted changes. Deploy from a clean, up-to-date `main`, so production matches git.
 - There's no CI deploy: no GitHub Actions and no Workers Builds.
+- `npm run build` also prints `dist/resume.pdf` from the built `/resume/` page with headless Chromium (`scripts/resume-pdf.mjs`), so the PDF is the page's print stylesheet with a real text layer. The build needs Chromium at `/usr/bin/chromium` or `CHROME_PATH`, and fails without it, rather than deploying a broken PDF link.
 
 ### Type-checking: TypeScript 7.1 beta with `@astrojs/ts-content-mapper`
 

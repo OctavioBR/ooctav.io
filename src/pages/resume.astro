@@ -1,13 +1,284 @@
 ---
-import { getEntry, render } from 'astro:content'
+import { Picture } from 'astro:assets'
+import { render } from 'astro:content'
 import Base from '../layouts/Base.astro'
+import ResumeBar from '../components/ResumeBar.astro'
+import ResumeEntry from '../components/ResumeEntry.astro'
+import { duration, getResume, inlineMd, jobSpan, range, skillIcon, withLanguageFlags, type Job } from '../lib/resume'
+import { LINKS, SITE } from '../site'
 
-const resume = await getEntry('pages', 'resume')
-if (!resume) throw new Error('Missing src/content/pages/resume.md')
-const { Content } = await render(resume)
+const resume = await getResume()
+const { data } = resume
+const { Content: About } = await render(resume)
+
+const featured = data.experience.slice(0, data.featured)
+const earlier = data.experience.slice(data.featured)
+
+const entry = (job: Job) => {
+  const span = jobSpan(job)
+  return {
+    org: job.company,
+    url: job.url,
+    logo: job.logo,
+    when: `${range(span.start, span.end)} · ${duration(span.start, span.end)}`,
+    facts: `${job.type} · ${job.workplace}`,
+    location: job.location,
+    roles: job.roles,
+  }
+}
+
+// Contact links as readable text, for print and ATS parsers that ignore hrefs.
+const order = ['Email', 'LinkedIn', 'GitHub']
+const contacts = [...LINKS]
+  .sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label))
+  .map((l) => ({ ...l, text: l.href.replace(/^(mailto:|https?:\/\/(www\.)?)/, '').replace(/\/$/, '') }))
+const sections = ['About', 'Experience', 'Education', 'Skills', 'Additional', 'Contact']
+const dots = (title: string) => sections.indexOf(title) + 1
 ---
 
-<Base title={resume.data.title} description={resume.data.description} markdownPath="/resume.md">
-  <h1>{resume.data.title}</h1>
-  <article class="prose"><Content /></article>
+<Base title={data.title} description={data.description} markdownPath="/resume.md">
+  <ResumeBar slot="header" headline={data.headline} photo={data.photo} />
+
+  <div class="resume" id="top">
+    <section class="hero" aria-label="Introduction">
+      <h1>{SITE.name}</h1>
+      <p class="print-only headline">{data.headline}</p>
+      <p class="print-only contact-line">
+        {contacts.map((c, i) => <>{i > 0 && ' · '}<a href={c.href}>{c.text}</a></>)}
+        {' · '}<a href={SITE.url}>{SITE.url.replace(/^https?:\/\//, '')}</a>
+      </p>
+      <span class="rule" aria-hidden="true"></span>
+      <Picture
+        src={data.photo}
+        alt={data.photoAlt}
+        class="blob hero-photo"
+        formats={['avif', 'webp']}
+        width={256}
+        height={320}
+        densities={[1, 2]}
+        position="left"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </section>
+
+    {sections.map((title) => (
+      <section class="section" aria-labelledby={title.toLowerCase()} data-section={title}>
+        <div class="section-head">
+          <span class="dots" aria-hidden="true">{Array.from({ length: dots(title) }, () => <i />)}</span>
+          <h2 id={title.toLowerCase()}>{title}</h2>
+        </div>
+
+        {title === 'About' && <div class="about"><About /></div>}
+
+        {title === 'Experience' && (
+          <>
+            <ol class="timeline">{featured.map((job) => <ResumeEntry {...entry(job)} />)}</ol>
+            {earlier.length > 0 && (
+              <>
+                <input type="checkbox" id="more-experience" class="more-toggle sr-only" />
+                <ol class="timeline earlier">{earlier.map((job) => <ResumeEntry {...entry(job)} />)}</ol>
+                <label for="more-experience" class="more-button">
+                  <span class="when-closed">Show full experience ({earlier.length} more) ↓</span>
+                  <span class="when-open">Show less ↑</span>
+                </label>
+              </>
+            )}
+          </>
+        )}
+
+        {title === 'Education' && (
+          <ol class="timeline">
+            {data.education.map((e) => (
+              <ResumeEntry
+                org={e.school}
+                logo={e.logo}
+                when={e.start ? `${e.start} – ${e.end}` : `Graduated ${e.end}`}
+                location={e.location}
+                roles={[{ title: e.degree }]}
+              />
+            ))}
+          </ol>
+        )}
+
+        {title === 'Skills' && (
+          <dl class="skills">
+            {data.skills.map((s) => (
+              <div>
+                <dt>{s.group}</dt>
+                <dd>
+                  {s.items.map((item, i) => {
+                    const icon = skillIcon(item)
+                    return (
+                      <>
+                        {i > 0 && <span class="sep" aria-hidden="true"> · </span>}
+                        {icon
+                          ? <span class="skill tip">{item}<span class="tip-pop" aria-hidden="true"><svg viewBox="0 0 24 24" fill={`#${icon.hex}`}><path d={icon.path} /></svg></span></span>
+                          : <span class="skill">{item}</span>}
+                      </>
+                    )
+                  })}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        {title === 'Additional' && (
+          <ul class="additional">{data.additional.map((a) => <li set:html={withLanguageFlags(inlineMd(a))} />)}</ul>
+        )}
+
+        {title === 'Contact' && (
+          <div class="contact">
+            <Picture src={data.photo} alt="" class="blob contact-photo" formats={['avif', 'webp']} width={160} height={192} densities={[1, 2]} position="left" />
+            <p class="contact-name">{SITE.name}</p>
+            <ul>
+              {contacts.map((c) => <li><span class="contact-label">{c.label}</span> <a href={c.href}>{c.text}</a></li>)}
+              <li class="screen-only"><span class="contact-label">Resume</span> <a href="/resume.pdf" download="Octavio-Richter-Resume.pdf">Download PDF</a></li>
+            </ul>
+          </div>
+        )}
+      </section>
+    ))}
+  </div>
 </Base>
+
+<style>
+  /* The resume is wider than the rest of the site. */
+  :global(body) { max-width: 60rem; }
+  :global(main) { padding-top: 3.5rem; }
+
+  .resume { --accent: var(--color-text-link); }
+
+  .hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding-block: 3rem 1rem; }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.25rem, 9vw, 5.5rem);
+    font-weight: 650;
+    letter-spacing: -0.05em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .rule { display: block; width: 12rem; max-width: 50%; height: 3px; margin: 2rem 0 2.5rem; background: rgb(var(--accent)); border-radius: 2px; }
+  .blob :global(img), :global(img.blob) {
+    display: block;
+    object-fit: cover;
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  .hero :global(img) { width: 16rem; max-width: 70vw; height: auto; aspect-ratio: 4 / 5; }
+
+  .section { padding-top: 4.5rem; }
+  .section-head { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-bottom: 2.5rem; }
+  .dots { display: flex; gap: 0.4rem; }
+  .dots i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: rgb(var(--accent)); }
+  h2 { margin: 0; font-size: 1.75rem; letter-spacing: -0.02em; }
+
+  .about { max-width: 38rem; margin-inline: auto; text-align: center; }
+  .about :global(p) { margin: 0; }
+
+  .timeline { list-style: none; margin: 0 auto; padding: 0; max-width: 54rem; }
+
+  .more-toggle:not(:checked) ~ .earlier { display: none; }
+  /* Expanded: the last featured entry's line runs on into the earlier ones. */
+  .section:has(.more-toggle:checked) :global(.timeline:not(.earlier) > .entry:last-child .node::before) {
+    bottom: 0;
+    height: auto;
+  }
+  .more-toggle:checked ~ .more-button .when-closed,
+  .more-toggle:not(:checked) ~ .more-button .when-open { display: none; }
+  .more-button {
+    display: block;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 0.5rem 0.25rem;
+    color: rgb(var(--accent));
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+  .more-button:hover { opacity: 0.7; }
+  .more-toggle:focus-visible ~ .more-button { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; }
+
+  .skills { max-width: 40rem; margin: 0 auto; text-align: center; display: grid; gap: 1rem; }
+  .skills dt { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgb(var(--color-text-muted)); }
+  .skills dd { margin: 0.15rem 0 0; }
+  .skills .sep { color: rgb(var(--accent)); }
+
+  .additional { max-width: 40rem; margin: 0 auto; padding: 0; list-style: none; text-align: center; }
+  .additional li + li { margin-top: 0.6rem; }
+
+  /* Hover tooltips: a flag or logo popping above a word (decorative). */
+  .resume :global(.tip) { position: relative; text-decoration: underline dotted rgb(var(--color-text-muted)); text-underline-offset: 0.25em; cursor: default; }
+  .resume :global(.tip-pop) {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    min-width: 2.25rem;
+    height: 2rem;
+    padding: 0 0.35rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    border-radius: 0.4rem;
+    /* Always light, so dark logos stay visible in dark mode. */
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+    transform: translate(-50%, 0.25rem);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .resume :global(.tip-pop svg) { width: 1.25rem; height: 1.25rem; }
+  .resume :global(.tip:hover .tip-pop) { opacity: 1; transform: translate(-50%, -0.1rem); }
+
+  .contact { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .contact :global(img) { width: 10rem; height: auto; aspect-ratio: 5 / 6; }
+  .contact-name { margin: 1.5rem 0 0.75rem; font-weight: 700; font-size: 1rem; }
+  .contact ul { list-style: none; margin: 0; padding: 0; }
+  .contact li { margin-bottom: 0.35rem; }
+  .contact-label { display: inline-block; min-width: 5.5rem; text-align: right; margin-right: 0.5rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: rgb(var(--color-text-muted)); }
+
+  .print-only { display: none; }
+
+  /* Print / PDF: one column, contact details up top, everything expanded. */
+  @media print {
+    @page { size: A4; margin: 12mm 14mm; }
+    :global(main) { padding-top: 0; }
+    /* A proportional face fits far more per line than the screen's mono. */
+    :global(body) { font-family: 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif; font-size: 10pt; line-height: 1.4; }
+    .hero { display: block; position: relative; min-height: 1.15in; padding: 0 1.2in 0.25rem 0; text-align: left; }
+    h1 { font-size: 24pt; letter-spacing: -0.03em; }
+    .print-only { display: block; margin: 0.2rem 0 0; }
+    .headline { font-size: 12pt; font-weight: 600; }
+    .contact-line { font-size: 9pt; }
+    .rule { display: none; }
+    .hero :global(img) { position: absolute; top: 0; right: 0; width: 0.95in; }
+    .section { padding-top: 0.9rem; break-inside: auto; }
+    .section-head { align-items: flex-start; margin-bottom: 0.5rem; border-bottom: 1px solid #999; }
+    .dots { display: none; }
+    h2 { font-size: 12pt; text-transform: uppercase; letter-spacing: 0.04em; break-after: avoid-page; }
+    .about, .skills, .additional { max-width: none; text-align: left; }
+    .timeline { max-width: none; }
+    .earlier { display: block !important; }
+    .more-button, .more-toggle { display: none !important; }
+    .skills { gap: 0.15rem; }
+    .skills > div { display: block; }
+    .skills dt, .skills dd { display: inline; }
+    .skills dt { font-size: inherit; text-transform: none; letter-spacing: 0; color: inherit; }
+    .skills dt::after { content: ': '; }
+    .skills dd { margin: 0; }
+    .skills .sep { color: inherit; }
+    .additional { list-style: disc; padding-left: 1.1rem; }
+    .additional li + li { margin-top: 0.1rem; }
+    .resume :global(.tip-pop) { display: none; }
+    .resume :global(.tip) { text-decoration: none; }
+    .contact { align-items: flex-start; text-align: left; }
+    .contact :global(picture), .contact :global(img), .contact-name { display: none; }
+    .contact li { margin-bottom: 0.1rem; }
+    .contact-label { min-width: 0; text-align: left; font-size: inherit; text-transform: none; color: inherit; }
+    .contact-label::after { content: ':'; }
+    .screen-only { display: none; }
+  }
+</style>
