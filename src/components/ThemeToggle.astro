@@ -1,0 +1,85 @@
+---
+// Light/dark toggle. Defaults to the system theme; a click pins the opposite
+// theme in localStorage and on <html data-theme>. The pre-paint script that
+// restores the choice lives in Base.astro so there's no flash.
+// The icon morphs: the sun's rays retract and a mask circle slides over the
+// disc to carve a crescent moon.
+---
+
+<button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <mask id="theme-toggle-moon">
+      <rect width="24" height="24" fill="#fff" />
+      <circle class="cut" cx="24" cy="0" r="8" fill="#000" />
+    </mask>
+    <circle class="disc" cx="12" cy="12" r="5" mask="url(#theme-toggle-moon)" />
+    <g class="rays">
+      <line x1="12" y1="1.5" x2="12" y2="3.5" />
+      <line x1="12" y1="20.5" x2="12" y2="22.5" />
+      <line x1="1.5" y1="12" x2="3.5" y2="12" />
+      <line x1="20.5" y1="12" x2="22.5" y2="12" />
+      <line x1="4.6" y1="4.6" x2="6" y2="6" />
+      <line x1="18" y1="18" x2="19.4" y2="19.4" />
+      <line x1="4.6" y1="19.4" x2="6" y2="18" />
+      <line x1="18" y1="6" x2="19.4" y2="4.6" />
+    </g>
+  </svg>
+</button>
+
+<script>
+  const root = document.documentElement
+  const dark = matchMedia('(prefers-color-scheme: dark)')
+  const isDark = () => (root.dataset.theme ?? (dark.matches ? 'dark' : 'light')) === 'dark'
+  const sync = () => {
+    for (const b of document.querySelectorAll('.theme-toggle')) b.setAttribute('aria-pressed', String(isDark()))
+  }
+  sync()
+  dark.addEventListener('change', sync)
+  for (const b of document.querySelectorAll('.theme-toggle')) {
+    b.addEventListener('click', () => {
+      const next = isDark() ? 'light' : 'dark'
+      // Back to "follow the system" when the choice matches it.
+      if ((next === 'dark') === dark.matches) {
+        delete root.dataset.theme
+        try { localStorage.removeItem('theme') } catch {}
+      } else {
+        root.dataset.theme = next
+        try { localStorage.setItem('theme', next) } catch {}
+      }
+      sync()
+    })
+  }
+</script>
+
+<style>
+  .theme-toggle {
+    display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0;
+    border: 0; border-radius: 0.25rem; background: none; color: inherit; cursor: pointer;
+  }
+  .theme-toggle:hover, .theme-toggle:focus-visible { background: rgb(var(--color-bg-code)); }
+  svg {
+    width: 1.125rem; height: 1.125rem; overflow: visible;
+    fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
+    transition: transform 0.5s cubic-bezier(0.5, 1.5, 0.5, 1);
+  }
+  .disc { stroke: none; transform-origin: center; transition: r 0.4s ease, transform 0.4s ease; }
+  .cut { transition: cx 0.4s ease, cy 0.4s ease; }
+  .rays { transform-origin: center; transition: transform 0.4s ease 0.1s, opacity 0.3s ease 0.1s; }
+
+  /* Moon state, both for a pinned dark theme and system dark with no pin. */
+  :global(:root[data-theme='dark']) svg { transform: rotate(-20deg); }
+  :global(:root[data-theme='dark']) .disc { r: 9; }
+  :global(:root[data-theme='dark']) .cut { cx: 18; cy: 7.5; }
+  :global(:root[data-theme='dark']) .rays { transform: rotate(-45deg) scale(0.4); opacity: 0; transition-delay: 0s; }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) svg { transform: rotate(-20deg); }
+    :global(:root:not([data-theme='light'])) .disc { r: 9; }
+    :global(:root:not([data-theme='light'])) .cut { cx: 18; cy: 7.5; }
+    :global(:root:not([data-theme='light'])) .rays { transform: rotate(-45deg) scale(0.4); opacity: 0; transition-delay: 0s; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    svg, .disc, .cut, .rays { transition: none; }
+  }
+  @media print { .theme-toggle { display: none; } }
+</style>

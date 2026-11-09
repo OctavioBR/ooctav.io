@@ -22,8 +22,10 @@
   scroll-behavior: smooth;
 }
 
+/* Dark palette: follows the system unless the toggle (ThemeToggle.astro)
+   pinned a choice in <html data-theme>. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --color-text-body: 220 220 220;
     --color-text-muted: 160 160 160;
     --color-text-link: 100 149 237;
@@ -32,8 +34,21 @@
     --color-bg-code: 50 50 50;
     --color-bg-selection: 220 220 220;
     --color-border: 80 80 80;
+    color-scheme: dark;
   }
 }
+:root[data-theme='dark'] {
+    --color-text-body: 220 220 220;
+    --color-text-muted: 160 160 160;
+    --color-text-link: 100 149 237;
+    --color-text-selection: 0 0 0;
+    --color-bg-body: 30 30 30;
+    --color-bg-code: 50 50 50;
+    --color-bg-selection: 220 220 220;
+    --color-border: 80 80 80;
+    color-scheme: dark;
+}
+:root[data-theme='light'] { color-scheme: light; }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -113,7 +128,10 @@ hr { border: 0; border-top: 1px solid rgb(var(--color-border)); margin: 2rem 0; 
 }
 
 @media print {
-  :root {
+  :root, :root[data-theme] {
+    --color-text-selection: 255 255 255;
+    --color-bg-code: 243 243 240;
+    --color-bg-selection: 0 0 0;
     --color-text-body: 0 0 0;
     --color-text-muted: 70 70 70;
     --color-text-link: 0 0 238;
