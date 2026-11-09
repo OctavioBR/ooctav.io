@@ -1,16 +1,24 @@
 ---
-import type { CollectionEntry } from 'astro:content'
-interface Props { projects: CollectionEntry<'projects'>[] }
-const { projects } = Astro.props
+import { render, type CollectionEntry } from 'astro:content'
+interface Props {
+  projects: CollectionEntry<'projects'>[]
+  // Show each project's Markdown body under its description.
+  detailed?: boolean
+}
+const { projects, detailed = false } = Astro.props
+const items = await Promise.all(
+  projects.map(async (p) => ({ p, Body: detailed && p.body?.trim() ? (await render(p)).Content : null })),
+)
 ---
 
 <ul class="ruled">
-  {projects.map((p) => (
+  {items.map(({ p, Body }) => (
     <li>
       <span class="kicker">{p.data.year}</span>
       <div>
         <a href={p.data.url}>{p.data.title}</a>
         <span class="sub">{p.data.description}</span>
+        {Body && <div class="body"><Body /></div>}
       </div>
     </li>
   ))}

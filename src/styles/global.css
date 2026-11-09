@@ -116,6 +116,9 @@ hr { border: 0; border-top: 1px solid rgb(var(--color-border)); margin: 2rem 0; 
 .ruled .kicker { padding-top: 0.15rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
 .ruled a { font-weight: 700; }
 .ruled .sub { display: block; margin-top: 0.2rem; font-size: 0.75rem; line-height: 1.45; color: rgb(var(--color-text-muted)); }
+.ruled .body { margin-top: 0.5rem; font-size: 0.875rem; line-height: 1.55; }
+.ruled .body p { margin: 0; }
+.ruled .body p + p { margin-top: 0.5rem; }
 
 /* Rendered Markdown (resume) */
 .prose ul { padding-left: 1.25rem; }
