@@ -35,6 +35,17 @@ The stack follows the approach in Flavio Copes' [Why I use Astro](https://flavio
 - Hostinger stays the **registrar**. The domain's **nameservers** change to Cloudflare, which makes Cloudflare the authoritative DNS. A Worker can only use a Custom Domain on a zone managed by Cloudflare.
 - `ooctav.io` is attached to the Worker as a Custom Domain. `www.ooctav.io` redirects to the apex with a Cloudflare redirect rule.
 - Before switching nameservers, copy any existing Hostinger DNS records you still need, such as email MX and TXT records, into the Cloudflare zone.
+- When the zone is added, Cloudflare imports Hostinger's apex `A` record, which points at Hostinger's parking page. Delete it before running `wrangler deploy`. A Custom Domain can't attach to a hostname that already has a DNS record, so while the record exists the parking page keeps being served. Once attached, the Custom Domain manages its own record (a proxied `AAAA 100::`).
+- The `www` redirect lives in the zone, not in this repo:
+  - DNS: `www` is a proxied `CNAME` to `ooctav.io`, so its requests reach Cloudflare's edge.
+  - A rule in the zone's `http_request_dynamic_redirect` phase, named "Redirect www to root": when `http.host eq "www.ooctav.io"`, return a 301 to `concat("https://ooctav.io", http.request.uri.path)` and keep the query string.
+  - To recreate it from the CLI (pass the rule as `--body`, because the CLI's flag validation asks for an `--id` this endpoint doesn't need):
+
+    ```sh
+    cf rulesets entrypoint update http_request_dynamic_redirect --zone ooctav.io --body '{"rules":[{"description":"Redirect www to root","expression":"(http.host eq \"www.ooctav.io\")","action":"redirect","action_parameters":{"from_value":{"status_code":301,"preserve_query_string":true,"target_url":{"expression":"concat(\"https://ooctav.io\", http.request.uri.path)"}}}}]}'
+    ```
+
+    This command replaces every rule in that phase, so include any other redirect rules you've added there.
 
 ### Markdown for agents
 
