@@ -34,6 +34,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
     {markdownPath && <link rel="alternate" type="text/markdown" href={markdownPath} title="Markdown version" />}
+    {/* Cloudflare Web Analytics (ADR-0002). The token is public. Only production gets the beacon. */}
+    {import.meta.env.PROD && (
+      <script
+        is:inline
+        defer
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon='{"token": "e2854eb4bb5e44cc9c6977ee8571215b"}'
+      ></script>
+    )}
   </head>
   <body>
     <Header />
