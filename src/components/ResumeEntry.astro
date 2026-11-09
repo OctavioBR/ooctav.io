@@ -112,13 +112,14 @@ const multi = roles.length > 1
       column-gap: 0.6rem;
     }
     .meta { break-after: avoid-page; }
-    .role { break-inside: avoid-page; }
+    .role { break-inside: auto; }
+    .role li { break-inside: avoid-page; }
     .node::before { display: none; }
     .node img, .initial { width: 1.4rem; height: 1.4rem; box-shadow: none; }
     .meta { text-align: left; padding: 0; display: flex; flex-wrap: wrap; column-gap: 0.75rem; align-items: baseline; }
-    .roles { padding-bottom: 0.9rem; }
+    .roles { padding-bottom: 0.5rem; }
     .role + .role { margin-top: 0.5rem; }
     ul { margin-top: 0.2rem; }
-    ul li { margin-bottom: 0.1rem; }
+    ul li { margin-bottom: 0.05rem; }
   }
 </style>

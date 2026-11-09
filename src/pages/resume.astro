@@ -1,6 +1,7 @@
 ---
 import { Picture } from 'astro:assets'
 import { render } from 'astro:content'
+import contactPhoto from '../assets/photos/disney.jpeg'
 import Base from '../layouts/Base.astro'
 import ResumeBar from '../components/ResumeBar.astro'
 import ResumeEntry from '../components/ResumeEntry.astro'
@@ -130,7 +131,7 @@ const dots = (title: string) => sections.indexOf(title) + 1
 
         {title === 'Contact' && (
           <div class="contact">
-            <Picture src={data.photo} alt="" class="blob contact-photo" formats={['avif', 'webp']} width={160} height={192} densities={[1, 2]} position="left" />
+            <Picture src={contactPhoto} alt="" class="contact-photo" formats={['avif', 'webp']} width={160} height={160} densities={[1, 2]} />
             <p class="contact-name">{SITE.name}</p>
             <ul>
               {contacts.map((c) => <li><span class="contact-label">{c.label}</span> <a href={c.href}>{c.text}</a></li>)}
@@ -237,7 +238,7 @@ const dots = (title: string) => sections.indexOf(title) + 1
   .resume :global(.tip:hover .tip-pop) { opacity: 1; transform: translate(-50%, -0.1rem); }
 
   .contact { display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .contact :global(img) { width: 10rem; height: auto; aspect-ratio: 5 / 6; }
+  .contact :global(img) { display: block; width: 10rem; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 50%; }
   .contact-name { margin: 1.5rem 0 0.75rem; font-weight: 700; font-size: 1rem; }
   .contact ul { list-style: none; margin: 0; padding: 0; }
   .contact li { margin-bottom: 0.35rem; }
@@ -247,19 +248,19 @@ const dots = (title: string) => sections.indexOf(title) + 1
 
   /* Print / PDF: one column, contact details up top, everything expanded. */
   @media print {
-    @page { size: A4; margin: 12mm 14mm; }
+    @page { size: A4; margin: 9mm 12mm; }
     :global(main) { padding-top: 0; }
     /* A proportional face fits far more per line than the screen's mono. */
-    :global(body) { font-family: 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif; font-size: 10pt; line-height: 1.4; }
-    .hero { display: block; position: relative; min-height: 1.15in; padding: 0 1.2in 0.25rem 0; text-align: left; }
+    :global(body) { font-family: 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif; font-size: 9.5pt; line-height: 1.3; }
+    .hero { display: block; padding: 0; text-align: left; }
     h1 { font-size: 24pt; letter-spacing: -0.03em; }
     .print-only { display: block; margin: 0.2rem 0 0; }
     .headline { font-size: 12pt; font-weight: 600; }
     .contact-line { font-size: 9pt; }
     .rule { display: none; }
-    .hero :global(img) { position: absolute; top: 0; right: 0; width: 0.95in; }
-    .section { padding-top: 0.9rem; break-inside: auto; }
-    .section-head { align-items: flex-start; margin-bottom: 0.5rem; border-bottom: 1px solid #999; }
+    .hero :global(picture), .hero :global(img) { display: none; }
+    .section { padding-top: 0.5rem; break-inside: auto; }
+    .section-head { align-items: flex-start; margin-bottom: 0.3rem; border-bottom: 1px solid #999; }
     .dots { display: none; }
     h2 { font-size: 12pt; text-transform: uppercase; letter-spacing: 0.04em; break-after: avoid-page; }
     .about, .skills, .additional { max-width: none; text-align: left; }
@@ -277,6 +278,8 @@ const dots = (title: string) => sections.indexOf(title) + 1
     .additional li + li { margin-top: 0.1rem; }
     .resume :global(.tip-pop) { display: none; }
     .resume :global(.tip) { text-decoration: none; }
+    /* Contact details already head the first page. */
+    .section[data-section='Contact'] { display: none; }
     .contact { align-items: flex-start; text-align: left; }
     .contact :global(picture), .contact :global(img), .contact-name { display: none; }
     .contact li { margin-bottom: 0.1rem; }
