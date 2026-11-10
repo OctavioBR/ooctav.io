@@ -1,0 +1,199 @@
+---
+import { Image, getImage } from 'astro:assets'
+import Base from '../layouts/Base.astro'
+import { boardgames } from '../lib/boardgames'
+
+const games = await boardgames()
+// Optimized poster frames for clips (the <video poster> attribute takes one URL).
+const posters = new Map<string, string>()
+for (const p of games.flatMap((g) => g.photos)) {
+  if (p.video) posters.set(p.video, (await getImage({ src: p.image, width: 1024, format: 'webp' })).src)
+}
+const pad = (n: number) => String(n).padStart(2, '0')
+---
+
+<Base title="Hobby archive" description="Snapshots from my board game nights and the shelf that feeds them.">
+  <header class="intro">
+    <p class="kicker">Hobby archive</p>
+    <h1>Table Night</h1>
+    <p class="muted">Snapshots from my board game sessions and the shelf that feeds them.</p>
+  </header>
+
+  <section class="gallery">
+    {games.map((game, i) => {
+      return (
+        <article class="game" data-game>
+          <button type="button" class="card" aria-haspopup="dialog" aria-label={`Open ${game.name}`}>
+            <div class="frame">
+              {game.photos.map((p, j) => p.video ? (
+                <video
+                  class:list={['slide', { on: j === 0 }]} src={p.video} poster={posters.get(p.video)}
+                  muted loop playsinline preload="none" aria-label={game.name}
+                />
+              ) : (
+                <Image
+                  src={p.image} alt={j === 0 ? game.name : ''} widths={[320, 480, 720]} sizes="(min-width: 640px) 20rem, 100vw"
+                  class:list={['slide', { on: j === 0 }]} loading={i < 2 && j === 0 ? 'eager' : 'lazy'}
+                />
+              ))}
+              {game.photos.length > 1
+                ? <span class="count">{game.photos.length} photos</span>
+                : game.photos[0].video && <span class="count">▶ clip</span>}
+            </div>
+            <div class="title">
+              <h2>{game.name}</h2>
+              <span class="num">#{pad(i + 1)}</span>
+            </div>
+            <p class="sub muted">{game.photos[0].date ?? 'Date unknown'}</p>
+          </button>
+
+          <dialog aria-label={game.name}>
+            <form method="dialog"><button class="close" aria-label="Close">×</button></form>
+            <button type="button" class="viewer" aria-label={game.photos.length > 1 ? 'Next photo' : game.name}>
+              {game.photos.map((p, j) => p.video ? (
+                <video
+                  class:list={['shot', { on: j === 0 }]} src={p.video} poster={posters.get(p.video)}
+                  controls muted loop playsinline preload="none" aria-label={`${game.name}, clip`}
+                />
+              ) : (
+                <Image
+                  src={p.image} alt={`${game.name}, photo ${j + 1}`} widths={[640, 1024, 1600]}
+                  sizes="min(92vw, 56rem)" class:list={['shot', { on: j === 0 }]}
+                />
+              ))}
+            </button>
+            <div class="info">
+              <div class="title">
+                <h2>{game.name}</h2>
+                {game.photos.length > 1 && <span class="num" data-pos>1 / {game.photos.length}</span>}
+              </div>
+              <p>{game.blurb}</p>
+              {game.photos.map((p, j) => (
+                <dl class:list={['meta', { on: j === 0 }]}>
+                  <dt>Date</dt><dd>{p.iso ? <time datetime={p.iso}>{p.date}</time> : 'Unknown'}</dd>
+                  <dt>Location</dt><dd>{p.location ?? 'Unknown'}</dd>
+                  {p.camera && <><dt>Camera</dt><dd>{p.camera}</dd></>}
+                  {p.settings && <><dt>Exposure</dt><dd>{p.settings}</dd></>}
+                  <dt>File</dt><dd>{p.file}</dd>
+                </dl>
+              ))}
+            </div>
+          </dialog>
+        </article>
+      )
+    })}
+  </section>
+</Base>
+
+<style>
+  .intro { margin-bottom: 2.5rem; }
+  .kicker { margin: 0; font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(var(--color-text-link)); }
+  .intro h1 { margin: 0.5rem 0 0.75rem; font-size: clamp(2.5rem, 9vw, 4rem); line-height: 1; letter-spacing: -0.03em; }
+  .intro p:last-child { max-width: 28rem; }
+
+  /* Grid of square cards. The gallery breaks out of the 42rem body column
+     to the full viewport (minus a small gutter), and fits as many ~16rem
+     columns as the width allows. */
+  :global(html) { overflow-x: clip; } /* 100vw includes the scrollbar */
+  .gallery {
+    width: 100vw; margin-inline: calc(50% - 50vw); padding-inline: 1rem;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1.25rem 1rem;
+  }
+
+  .card { all: unset; display: block; width: 100%; cursor: pointer; }
+  .card:focus-visible .frame { outline: 2px solid rgb(var(--color-text-link)); outline-offset: 2px; }
+  .frame {
+    position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 0.5rem;
+    border: 1px solid rgb(var(--color-border)); background: rgb(var(--color-bg-code));
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.25);
+  }
+  .slide {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .slide.on { opacity: 1; }
+  /* Square crop; on hover the photo pans across what the crop hides. */
+  .card:hover .slide { animation: pan 3s ease-in-out infinite alternate; }
+  @keyframes pan { from { object-position: 0% 0%; } to { object-position: 100% 100%; } }
+  @media (prefers-reduced-motion: reduce) { .card:hover .slide { animation: none; } }
+  .count {
+    position: absolute; right: 0.5rem; bottom: 0.5rem; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+    font-size: 0.65rem; background: rgb(0 0 0 / 0.6); color: #fff;
+  }
+  .title { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: 0.75rem; }
+  .title h2 { margin: 0; font-size: 1.15rem; }
+  .num { font-size: 0.7rem; color: rgb(var(--color-text-muted)); white-space: nowrap; }
+  .sub { margin: 0; font-size: 0.75rem; }
+
+  dialog {
+    width: min(92vw, 56rem); max-height: 92vh; padding: 0; overflow: auto;
+    border: 1px solid rgb(var(--color-border)); border-radius: 0.75rem;
+    background: rgb(var(--color-bg-body)); color: inherit;
+  }
+  dialog::backdrop { background: rgb(0 0 0 / 0.7); }
+  .close {
+    all: unset; position: absolute; top: 0.5rem; right: 0.75rem; z-index: 1; cursor: pointer;
+    width: 2rem; height: 2rem; text-align: center; font-size: 1.5rem; line-height: 2rem;
+    border-radius: 50%; background: rgb(0 0 0 / 0.55); color: #fff;
+  }
+  .viewer { all: unset; display: grid; width: 100%; cursor: pointer; background: #111; }
+  .shot { grid-area: 1 / 1; width: 100%; height: auto; max-height: 65vh; object-fit: contain; visibility: hidden; }
+  .shot.on { visibility: visible; }
+  .info { padding: 0 1.25rem 1.25rem; }
+  .info p { margin: 0.5rem 0 1rem; }
+  .meta { display: none; grid-template-columns: max-content 1fr; gap: 0.15rem 1rem; margin: 0; font-size: 0.75rem; }
+  .meta.on { display: grid; }
+  .meta dt { color: rgb(var(--color-text-muted)); text-transform: uppercase; }
+  .meta dd { margin: 0; }
+</style>
+
+<script>
+  // Hover pages through a card's photos; the modal pages on click.
+  for (const game of document.querySelectorAll<HTMLElement>('[data-game]')) {
+    const card = game.querySelector<HTMLButtonElement>('.card')!
+    const dialog = game.querySelector('dialog')!
+    const slides = [...card.querySelectorAll('.slide')]
+    const shots = [...dialog.querySelectorAll('.shot')]
+    const metas = [...dialog.querySelectorAll('.meta')]
+    const pos = dialog.querySelector('[data-pos]')
+    let i = 0
+    let timer: number | undefined
+
+    // Toggle the visible item; play it if it's a clip, pause/rewind the others.
+    const show = (list: Element[], n: number, play: boolean) => list.forEach((el, k) => {
+      el.classList.toggle('on', k === n)
+      if (!(el instanceof HTMLVideoElement)) return
+      if (k === n && play) el.play().catch(() => {})
+      else { el.pause(); el.currentTime = 0 }
+    })
+    const showCard = (n: number, play = false) => { i = n; show(slides, n, play) }
+    const showModal = (n: number) => {
+      i = n; show(shots, n, true); show(metas, n, false)
+      if (pos) pos.textContent = `${n + 1} / ${shots.length}`
+    }
+
+    card.addEventListener('mouseenter', () => {
+      showCard(i, true)
+      if (slides.length > 1) timer = window.setInterval(() => showCard((i + 1) % slides.length, true), 3000)
+    })
+    card.addEventListener('mouseleave', () => { clearInterval(timer); showCard(0) })
+    card.addEventListener('click', () => {
+      clearInterval(timer)
+      showCard(i) // stop the hover preview
+      dialog.showModal()
+      showModal(i) // open on the item currently shown on the card
+    })
+    // Clicks on a clip go to its controls; elsewhere they page.
+    dialog.querySelector('.viewer')!.addEventListener('click', (e) => {
+      if (!(e.target instanceof HTMLVideoElement)) showModal((i + 1) % shots.length)
+    })
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') showModal((i + 1) % shots.length)
+      if (e.key === 'ArrowLeft') showModal((i - 1 + shots.length) % shots.length)
+    })
+    // Click on the backdrop closes.
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close() })
+    dialog.addEventListener('close', () => { show(shots, -1, false); showCard(0) })
+  }
+</script>

@@ -8,6 +8,7 @@ export const SITE = {
 export const NAV = [
   { href: '/resume/', label: 'Resume' },
   { href: '/projects/', label: 'Projects' },
+  { href: '/hobby/', label: 'Hobby' },
 ]
 
 export const LINKS = [
