@@ -114,9 +114,11 @@ const pad = (n: number) => String(n).padStart(2, '0')
   }
   .slide.on { opacity: 1; }
   /* Square crop; on hover the photo pans across what the crop hides. */
-  .card:hover .slide { animation: pan 3s ease-in-out infinite alternate; }
+  /* .preview is the touch stand-in for :hover (set by the script while the
+     card sits in the middle of the screen). */
+  .card:hover .slide, .card.preview .slide { animation: pan 3s ease-in-out infinite alternate; }
   @keyframes pan { from { object-position: 0% 0%; } to { object-position: 100% 100%; } }
-  @media (prefers-reduced-motion: reduce) { .card:hover .slide { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .card:hover .slide, .card.preview .slide { animation: none; } }
   .count {
     position: absolute; right: 0.5rem; bottom: 0.5rem; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
     font-size: 0.65rem; background: rgb(0 0 0 / 0.6); color: #fff;
@@ -126,8 +128,10 @@ const pad = (n: number) => String(n).padStart(2, '0')
   .num { font-size: 0.7rem; color: rgb(var(--color-text-muted)); white-space: nowrap; }
   .sub { margin: 0; font-size: 0.75rem; }
 
+  /* Freeze the page behind an open modal so scrolling stays inside it. */
+  :global(html:has(dialog[open])) { overflow: hidden; }
   dialog {
-    width: min(92vw, 56rem); max-height: 92vh; padding: 0; overflow: auto;
+    width: min(92vw, 56rem); max-height: 92dvh; padding: 0; overflow: auto; overscroll-behavior: contain;
     border: 1px solid rgb(var(--color-border)); border-radius: 0.75rem;
     background: rgb(var(--color-bg-body)); color: inherit;
   }
@@ -141,6 +145,16 @@ const pad = (n: number) => String(n).padStart(2, '0')
   .shot { grid-area: 1 / 1; width: 100%; height: auto; max-height: 65vh; object-fit: contain; visibility: hidden; }
   .shot.on { visibility: visible; }
   .info { padding: 0 1.25rem 1.25rem; }
+  /* Phones: the modal becomes a full-screen sheet of its own. */
+  @media (max-width: 640px) {
+    dialog {
+      width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0;
+      border: 0; border-radius: 0; padding-top: env(safe-area-inset-top, 0px);
+    }
+    .close { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 0.5rem); }
+    .shot { max-height: 60dvh; }
+    .info { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem); }
+  }
   .info p { margin: 0.5rem 0 1rem; }
   .meta { display: none; grid-template-columns: max-content 1fr; gap: 0.15rem 1rem; margin: 0; font-size: 0.75rem; }
   .meta.on { display: grid; }
@@ -150,6 +164,11 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 <script>
   // Hover pages through a card's photos; the modal pages on click.
+  const previews = new Map<Element, { start: () => void; stop: () => void }>()
+  const centerWatch = new IntersectionObserver((entries) => {
+    if (document.querySelector('dialog[open]')) return
+    for (const e of entries) previews.get(e.target)?.[e.isIntersecting ? 'start' : 'stop']()
+  }, { rootMargin: '-45% 0px -45% 0px' })
   for (const game of document.querySelectorAll<HTMLElement>('[data-game]')) {
     const card = game.querySelector<HTMLButtonElement>('.card')!
     const dialog = game.querySelector('dialog')!
@@ -173,14 +192,25 @@ const pad = (n: number) => String(n).padStart(2, '0')
       if (pos) pos.textContent = `${n + 1} / ${shots.length}`
     }
 
-    card.addEventListener('mouseenter', () => {
+    const startPreview = () => {
+      clearInterval(timer)
+      card.classList.add('preview')
       showCard(i, true)
       if (slides.length > 1) timer = window.setInterval(() => showCard((i + 1) % slides.length, true), 3000)
-    })
-    card.addEventListener('mouseleave', () => { clearInterval(timer); showCard(0) })
-    card.addEventListener('click', () => {
+    }
+    const stopPreview = (reset = true) => {
       clearInterval(timer)
-      showCard(i) // stop the hover preview
+      card.classList.remove('preview')
+      showCard(reset ? 0 : i)
+    }
+
+    card.addEventListener('mouseenter', startPreview)
+    card.addEventListener('mouseleave', () => stopPreview())
+    // Touch has no hover: preview whichever card is in the middle band of the screen.
+    if (matchMedia('(hover: none)').matches) centerWatch.observe(card)
+    previews.set(card, { start: startPreview, stop: () => stopPreview() })
+    card.addEventListener('click', () => {
+      stopPreview(false) // stop the preview, keep the current item
       dialog.showModal()
       showModal(i) // open on the item currently shown on the card
     })
