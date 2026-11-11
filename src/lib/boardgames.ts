@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ImageMetadata } from 'astro'
 import exifr from 'exifr'
+import blurbs from './boardgame-blurbs.json'
 
 // HEIC/MOV are skipped: sharp can't decode them. HEICs have JPEG twins.
 const files = import.meta.glob<{ default: ImageMetadata }>(
@@ -23,38 +24,7 @@ const sidecars = import.meta.glob<{ date?: string; latitude?: number; longitude?
 const stem = (key: string) => key.replace(/\.[^.]+$/, '')
 
 /** Short, funny one-liners. Keyed by folder name. */
-const BLURBS: Record<string, string> = {
-  '7 Wonders': 'Build a wonder of the ancient world by passing cards left and judging your neighbours silently.',
-  Acquire: 'Hotel chains, mergers and hostile takeovers: capitalism with tiles, and somehow still friendly.',
-  'Age of Innovation': 'Terraform the land, out-science your rivals, and pretend you understand the scoring track.',
-  Arcs: 'Space empires, card tricks and shifting ambitions. Nobody is your friend for more than one round.',
-  'Ark Nova': 'Build the zoo of your dreams, then spend 40 minutes arguing about where to put the penguins.',
-  Azul: 'Lay pretty tiles, take pretty penalties. The floor line is where dreams go to die.',
-  'Blood Rage': 'Vikings at Ragnarök. Dying gloriously is a perfectly valid strategy.',
-  'Brass Birmingham': 'The Industrial Revolution, one canal and one crippling loan at a time.',
-  Clank: 'Sneak into a dragon’s lair, steal the shiny thing, and absolutely do not make noise. (You will make noise.)',
-  Coloretto: 'Collect chameleons in exactly three colours. The fourth colour is betrayal.',
-  Cyclades: 'Bribe the Greek gods, build a metropolis, and watch a kraken eat your fleet.',
-  'Dorf Romantik': 'Place cosy hex tiles of forests and villages. The most relaxing game we ever argue about.',
-  'Dune Imperium': 'Spice must flow. So must the deck-building, the worker placement and the backstabbing.',
-  Earth: 'Grow an ecosystem in your tableau. Mostly ferns. Somehow ferns win.',
-  Eclipse: 'Explore the galaxy, design starships, and lose them all to the ancient aliens in the middle.',
-  'Endless Winter': 'Lead a Stone Age tribe through the Ice Age. Mammoths not included. (Actually included.)',
-  'Food Chain Magnate': 'Run a burger empire with no luck, no mercy, and a heavy amount of milestone regret.',
-  'Fractured Sky': 'Floating islands and sky battles. Gravity is optional, losing is not.',
-  'Gaia Project': 'Terra Mystica in space: same planning paralysis, more planets.',
-  Heat: 'Formula racing where your engine overheats and so does the table.',
-  Hegemony: 'Class warfare as a board game. Everyone loses, but the capitalist loses slightly less.',
-  Kemet: 'Egyptian gods, giant scorpions and pyramids. Diplomacy is spelled with a sword.',
-  Olympos: 'Ancient Greeks racing to discover the world and please the gods. The gods are never pleased.',
-  'Richard the Lionheart': 'Go on crusade with your friends, then quietly sabotage the crusade.',
-  Root: 'Adorable woodland animals waging asymmetric total war. The cats always start ahead. Always.',
-  'Terra Mystica': 'Turn the land into your colour, one shovel and one existential crisis at a time.',
-  'Terraforming Mars': 'Make Mars habitable with 200 cards and the patience of a geologist.',
-  Trickerion: 'Rival magicians in Victorian London. The real trick is learning the rules.',
-  'Twilight Imperium': 'A galactic epic that takes all day, all night and several friendships.',
-  Yokohama: 'Run around a Meiji-era port collecting tea, silk and very specific achievements.',
-}
+const BLURBS: Record<string, string> = blurbs
 
 export interface Photo {
   /** For a clip, this is its cover frame. */
