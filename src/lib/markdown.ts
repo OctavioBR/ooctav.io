@@ -3,6 +3,7 @@
 // come from the same content collections and can't drift apart.
 import { getCollection, getEntry } from 'astro:content'
 import { LINKS, SITE } from '../site'
+import { fillVars } from './vars.mjs'
 import { duration, getResume, jobFacts, jobSpan, range } from './resume'
 
 export const MARKDOWN_HEADERS = { 'Content-Type': 'text/markdown; charset=utf-8' }
@@ -21,7 +22,7 @@ const doc = (title: string, description: string, path: string, body: string) =>
     `# ${title}`,
     `> ${description}`,
     `Canonical: ${abs(path)}`,
-    absolutize(stripComments(body)).trim(),
+    fillVars(absolutize(stripComments(body))).trim(),
   ].join('\n\n') + '\n'
 
 export async function sortedProjects() {
