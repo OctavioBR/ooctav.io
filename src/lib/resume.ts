@@ -59,7 +59,7 @@ const LANGUAGE_FLAGS: Record<string, string> = { Portuguese: '🇧🇷', English
 const LANGUAGES = new RegExp(`\\b(${Object.keys(LANGUAGE_FLAGS).join('|')})\\b`, 'g')
 
 export const withLanguageFlags = (html: string) =>
-  html.replace(LANGUAGES, (lang) => `<span class="tip">${lang}<span class="tip-pop" aria-hidden="true">${LANGUAGE_FLAGS[lang]}</span></span>`)
+  html.replace(LANGUAGES, (lang) => `<span class="tip">${lang}<span class="tip-pop tip-pop--flag" aria-hidden="true">${LANGUAGE_FLAGS[lang]}</span></span>`)
 
 // Logos shown on hover over skills (decorative). Simple Icons has no Java logo
 // (Oracle had it removed), so Java uses OpenJDK's.
