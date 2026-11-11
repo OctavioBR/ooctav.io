@@ -28,7 +28,7 @@ experience:
     logo: ../../assets/logos/pluto-tv.png
     location: Los Angeles, California, United States
     workplace: Remote
-    type: Full-time
+    type: Contract
     roles:
       - title: Lead Platform Engineer
         start: 2023-12
@@ -71,7 +71,7 @@ experience:
     url: https://3778.care
     logo: ../../assets/logos/3778.png
     location: Florianópolis, Santa Catarina, Brazil
-    workplace: Remote
+    workplace: Hybrid
     type: Full-time
     roles:
       - title: Principal Platform Engineer
