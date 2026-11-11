@@ -69,12 +69,12 @@ const link = (label: string) => LINKS.find((l) => l.label === label)?.href
   .actions a:hover, .actions a:focus-visible { opacity: 1; background: rgb(var(--color-bg-code)); }
   svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* Fade the mini avatar in as the hero photo scrolls under the bar (no JS).
-     The --hero view timeline is set on the photo by the resume page. */
-  @supports (timeline-scope: --hero) {
-    .mini { animation: reveal linear both; animation-timeline: --hero; animation-range: exit 60% exit 100%; }
-    @keyframes reveal { from { opacity: 0; transform: scale(0.6); pointer-events: none; } to { opacity: 1; transform: none; } }
-  }
+  /* Mini avatar: hidden until the hero photo is mostly under the bar. The
+     script below toggles .shown (CSS scroll timelines would do this without
+     JS, but older Safari ignores them and showed the avatar all the time). */
+  .mini { opacity: 0; transform: scale(0.6); pointer-events: none; transition: opacity 0.25s, transform 0.25s; }
+  .mini.shown { opacity: 1; transform: none; pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) { .mini { transition: none; } }
 
   @media (max-width: 520px) {
     .headline, .sep { display: none; }
@@ -83,3 +83,15 @@ const link = (label: string) => LINKS.find((l) => l.label === label)?.href
   .skip { position: absolute; left: 50%; top: -100rem; transform: translateX(-50%); padding: 0.5rem 2rem; background: #fff; color: #000; }
   .skip:focus { top: 0.5rem; }
 </style>
+
+<script>
+  const mini = document.querySelector<HTMLElement>('.bar .mini')
+  const photo = document.querySelector('.hero-photo')
+  if (mini && photo) {
+    // The top margin keeps the photo's hidden part under the bar (about 3.5rem).
+    new IntersectionObserver(([e]) => {
+      const above = e.boundingClientRect.top < e.rootBounds!.top
+      mini.classList.toggle('shown', above && e.intersectionRatio < 0.4)
+    }, { rootMargin: '-56px 0px 0px 0px', threshold: [0, 0.2, 0.4, 0.6, 1] }).observe(photo)
+  }
+</script>

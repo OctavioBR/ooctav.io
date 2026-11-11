@@ -148,9 +148,6 @@ const dots = (title: string) => sections.indexOf(title) + 1
   /* The resume is wider than the rest of the site. */
   :global(body) { max-width: 60rem; }
   :global(main) { padding-top: 3.5rem; }
-  /* Lets the header's mini avatar follow the hero photo's scroll position. */
-  :global(body) { timeline-scope: --hero; }
-  .hero :global(.hero-photo) { view-timeline: --hero block; view-timeline-inset: 3.5rem 0; }
 
   .resume { --accent: var(--color-text-link); }
 

@@ -3,7 +3,9 @@
 // theme in localStorage and on <html data-theme>. The pre-paint script that
 // restores the choice lives in Base.astro so there's no flash.
 // The icon morphs: the sun's rays retract and a mask circle slides over the
-// disc to carve a crescent moon.
+// disc to carve a crescent moon. Only `transform` is animated: Safari ignores
+// SVG geometry (r, cx, cy) set from CSS. The mask sits on a wrapper <g> so
+// scaling the disc doesn't scale the mask with it.
 ---
 
 <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -12,7 +14,7 @@
       <rect width="24" height="24" fill="#fff" />
       <circle class="cut" cx="24" cy="0" r="8" fill="#000" />
     </mask>
-    <circle class="disc" cx="12" cy="12" r="5" mask="url(#theme-toggle-moon)" />
+    <g mask="url(#theme-toggle-moon)"><circle class="disc" cx="12" cy="12" r="5" /></g>
     <g class="rays">
       <line x1="12" y1="1.5" x2="12" y2="3.5" />
       <line x1="12" y1="20.5" x2="12" y2="22.5" />
@@ -62,19 +64,19 @@
     fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
     transition: transform 0.5s cubic-bezier(0.5, 1.5, 0.5, 1);
   }
-  .disc { stroke: none; transform-origin: center; transition: r 0.4s ease, transform 0.4s ease; }
-  .cut { transition: cx 0.4s ease, cy 0.4s ease; }
+  .disc { stroke: none; transform-origin: center; transition: transform 0.4s ease; }
+  .cut { transition: transform 0.4s ease; }
   .rays { transform-origin: center; transition: transform 0.4s ease 0.1s, opacity 0.3s ease 0.1s; }
 
   /* Moon state, both for a pinned dark theme and system dark with no pin. */
   :global(:root[data-theme='dark']) svg { transform: rotate(-20deg); }
-  :global(:root[data-theme='dark']) .disc { r: 9; }
-  :global(:root[data-theme='dark']) .cut { cx: 18; cy: 7.5; }
+  :global(:root[data-theme='dark']) .disc { transform: scale(1.8); }
+  :global(:root[data-theme='dark']) .cut { transform: translate(-6px, 7.5px); }
   :global(:root[data-theme='dark']) .rays { transform: rotate(-45deg) scale(0.4); opacity: 0; transition-delay: 0s; }
   @media (prefers-color-scheme: dark) {
     :global(:root:not([data-theme='light'])) svg { transform: rotate(-20deg); }
-    :global(:root:not([data-theme='light'])) .disc { r: 9; }
-    :global(:root:not([data-theme='light'])) .cut { cx: 18; cy: 7.5; }
+    :global(:root:not([data-theme='light'])) .disc { transform: scale(1.8); }
+    :global(:root:not([data-theme='light'])) .cut { transform: translate(-6px, 7.5px); }
     :global(:root:not([data-theme='light'])) .rays { transform: rotate(-45deg) scale(0.4); opacity: 0; transition-delay: 0s; }
   }
 
